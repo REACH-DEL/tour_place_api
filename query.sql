@@ -52,4 +52,16 @@ CREATE TABLE favorite (
 CREATE INDEX idx_favorite_user ON favorite(user_id);
 CREATE INDEX idx_favorite_place ON favorite(place_id);
 
+CREATE TABLE search_history (
+    search_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id        UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    place_id       UUID NOT NULL REFERENCES place(place_id) ON DELETE CASCADE,
+    created_at     TIMESTAMP DEFAULT NOW(),
+    updated_at     TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_search_history_user ON search_history(user_id);
+CREATE INDEX idx_search_history_place ON search_history(place_id);
+CREATE INDEX idx_search_history_user_updated ON search_history(user_id, updated_at DESC);
+
 INSERT INTO user VALUE(full_name='TheGoat', email='tirachlo34@gmail.com', password='$2a$10$Ntt5rQer0eCuZuOVEiCYVOpalvc.pKyrblpVGz30nvfB9q6o8GbWS', role='admin', status=true);

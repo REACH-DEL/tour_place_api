@@ -54,11 +54,21 @@ public class PlaceController {
         }
     }
 
-    @Operation(summary = "Get all places", description = "Get all places (Public endpoint)", security = {})
+    @Operation(summary = "Get all places", description = "Get all places. Filter by 'most_favorite' to get places ordered by favorite count, or 'all' (or omit) for all places. If authenticated, includes isFavorite field. (Public endpoint, optional authentication)", security = {})
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PlaceResponse>>> getAllPlaces() {
+    public ResponseEntity<ApiResponse<List<PlaceResponse>>> getAllPlaces(
+            @Parameter(description = "Filter: 'most_favorite' to order by favorite count, 'all' or omit for all places", required = false, example = "all")
+            @RequestParam(value = "filter", required = false, defaultValue = "all") String filter,
+            Authentication authentication) {
         try {
-            List<PlaceResponse> places = placeService.getAllPlaces();
+            // Extract userId if authenticated, otherwise null
+            UUID userId = null;
+            if (authentication != null && authentication.isAuthenticated() && authentication.getDetails() instanceof JwtAuthenticationDetails) {
+                JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+                userId = UUID.fromString(details.getUserId());
+            }
+            
+            List<PlaceResponse> places = placeService.getAllPlaces(filter, userId);
             return ResponseEntity.ok(
                     ApiResponse.<List<PlaceResponse>>builder()
                             .success(true)
@@ -126,6 +136,64 @@ public class PlaceController {
                     .body(ApiResponse.<List<PlaceSummaryResponse>>builder()
                             .success(false)
                             .message("Error searching places: " + e.getMessage())
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .build());
+        }
+    }
+
+    @Operation(summary = "Get nearby places", description = "Get places near a specific location using latitude and longitude. Returns places ordered by distance (in kilometers). If authenticated, includes isFavorite field. (Public endpoint, optional authentication)", security = {})
+    @GetMapping("/nearby")
+    public ResponseEntity<ApiResponse<List<PlaceResponse>>> getNearbyPlaces(
+            @Parameter(description = "Latitude of the location", required = true, example = "13.4125")
+            @RequestParam("lat") double lat,
+            @Parameter(description = "Longitude of the location", required = true, example = "103.8670")
+            @RequestParam("longitude") double longitude,
+            @Parameter(description = "Maximum number of results to return (1-100)", required = false, example = "10")
+            @RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
+            Authentication authentication) {
+        try {
+            // Validate limit
+            if (limit < 1) limit = 1;
+            if (limit > 100) limit = 100;
+            
+            // Validate coordinates
+            if (lat < -90 || lat > 90) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.<List<PlaceResponse>>builder()
+                                .success(false)
+                                .message("Latitude must be between -90 and 90")
+                                .status(HttpStatus.BAD_REQUEST)
+                                .build());
+            }
+            if (longitude < -180 || longitude > 180) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.<List<PlaceResponse>>builder()
+                                .success(false)
+                                .message("Longitude must be between -180 and 180")
+                                .status(HttpStatus.BAD_REQUEST)
+                                .build());
+            }
+            
+            // Extract userId if authenticated, otherwise null
+            UUID userId = null;
+            if (authentication != null && authentication.isAuthenticated() && authentication.getDetails() instanceof JwtAuthenticationDetails) {
+                JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+                userId = UUID.fromString(details.getUserId());
+            }
+            
+            List<PlaceResponse> places = placeService.getNearbyPlaces(lat, longitude, limit, userId);
+            return ResponseEntity.ok(
+                    ApiResponse.<List<PlaceResponse>>builder()
+                            .success(true)
+                            .message("Nearby places retrieved successfully")
+                            .payload(places)
+                            .status(HttpStatus.OK)
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<List<PlaceResponse>>builder()
+                            .success(false)
+                            .message("Error retrieving nearby places: " + e.getMessage())
                             .status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .build());
         }

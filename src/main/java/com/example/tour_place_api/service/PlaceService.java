@@ -81,12 +81,38 @@ public class PlaceService {
         return mapToResponse(place, additionalImages, isFavorite);
     }
 
-    public List<PlaceResponse> getAllPlaces() {
-        return placeMapper.findAll()
-                .stream()
+    public List<PlaceResponse> getAllPlaces(String filter, UUID userId) {
+        List<Place> places;
+        if ("most_favorite".equalsIgnoreCase(filter)) {
+            places = placeMapper.findAllOrderByFavoriteCount();
+        } else {
+            places = placeMapper.findAll();
+        }
+        
+        return places.stream()
                 .map(place -> {
                     List<String> additionalImages = getAdditionalImagesForPlace(place.getPlaceId());
-                    return mapToResponse(place, additionalImages, null);
+                    // Check if place is favorited by user (null if userId is null, false if not favorited)
+                    Boolean isFavorite = null;
+                    if (userId != null) {
+                        isFavorite = favoriteMapper.findByUserAndPlace(userId, place.getPlaceId()).isPresent();
+                    }
+                    return mapToResponse(place, additionalImages, isFavorite);
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<PlaceResponse> getNearbyPlaces(double lat, double longitude, int limit, UUID userId) {
+        List<Place> places = placeMapper.findNearby(lat, longitude, limit);
+        return places.stream()
+                .map(place -> {
+                    List<String> additionalImages = getAdditionalImagesForPlace(place.getPlaceId());
+                    // Check if place is favorited by user (null if userId is null, false if not favorited)
+                    Boolean isFavorite = null;
+                    if (userId != null) {
+                        isFavorite = favoriteMapper.findByUserAndPlace(userId, place.getPlaceId()).isPresent();
+                    }
+                    return mapToResponse(place, additionalImages, isFavorite);
                 })
                 .collect(Collectors.toList());
     }

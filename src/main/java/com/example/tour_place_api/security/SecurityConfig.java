@@ -53,6 +53,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/file/delete/**").authenticated()
                 // Require ROLE_USER for favorites endpoints
                 .requestMatchers("/api/v1/favorites/**").hasRole("USER")
+                // Require authentication for search history endpoints
+                .requestMatchers("/api/v1/search-history/**").authenticated()
                 // Require authentication for profile endpoint
                 .requestMatchers(HttpMethod.GET, "/api/v1/auth/profile").authenticated()
                 // All other /api/v1/** endpoints require authentication

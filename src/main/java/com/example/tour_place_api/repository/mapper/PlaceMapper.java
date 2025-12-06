@@ -41,6 +41,15 @@ public interface PlaceMapper {
 
     @ResultMap("placeMapper")
     @Select("""
+            SELECT p.* FROM place p
+            LEFT JOIN favorite f ON p.place_id = f.place_id
+            GROUP BY p.place_id
+            ORDER BY COUNT(f.fav_id) DESC, p.created_at DESC
+            """)
+    List<Place> findAllOrderByFavoriteCount();
+
+    @ResultMap("placeMapper")
+    @Select("""
             SELECT * FROM place WHERE place_name ILIKE #{searchTerm} ORDER BY created_at DESC
             """)
     List<Place> searchByName(String searchTerm);
@@ -64,4 +73,21 @@ public interface PlaceMapper {
             SELECT COUNT(*) FROM place
             """)
     int count();
+
+    @ResultMap("placeMapper")
+    @Select("""
+            SELECT *, 
+                   (6371 * acos(
+                       cos(radians(#{lat}))
+                       * cos(radians(CAST(lat AS DOUBLE PRECISION)))
+                       * cos(radians(CAST(longitude AS DOUBLE PRECISION)) - radians(#{longitude}))
+                       + sin(radians(#{lat}))
+                       * sin(radians(CAST(lat AS DOUBLE PRECISION)))
+                   )) AS distance
+            FROM place
+            WHERE lat IS NOT NULL AND longitude IS NOT NULL
+            ORDER BY distance
+            LIMIT #{limit}
+            """)
+    List<Place> findNearby(@Param("lat") double lat, @Param("longitude") double longitude, @Param("limit") int limit);
 }

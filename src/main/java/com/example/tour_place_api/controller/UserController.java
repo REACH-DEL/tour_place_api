@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -166,6 +167,30 @@ public class UserController {
                             .success(false)
                             .message(e.getMessage())
                             .status(HttpStatus.UNAUTHORIZED)
+                            .build());
+        }
+    }
+
+    @Operation(summary = "Logout", description = "Logout the current user. Client should remove the token from storage. (Requires authentication)", 
+               security = @SecurityRequirement(name = "bearerAuth"))
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(Authentication authentication) {
+        try {
+            // Clear the security context (though it's stateless, this ensures cleanup)
+            SecurityContextHolder.clearContext();
+
+            return ResponseEntity.ok(
+                    ApiResponse.<Void>builder()
+                            .success(true)
+                            .message("Logout successful. Please remove the token from client storage.")
+                            .status(HttpStatus.OK)
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<Void>builder()
+                            .success(false)
+                            .message("Error during logout: " + e.getMessage())
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .build());
         }
     }
