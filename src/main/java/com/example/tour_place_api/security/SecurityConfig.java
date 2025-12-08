@@ -59,6 +59,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/auth/profile").authenticated()
                 // Require ROLE_ADMIN for dashboard endpoints
                 .requestMatchers("/api/v1/dashboard/**").hasRole("ADMIN")
+                // Require ROLE_ADMIN for user management endpoints
+                .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                 // All other /api/v1/** endpoints require authentication
                 .requestMatchers("/api/v1/**").authenticated()
                 // Allow all other requests (like error pages, etc.)

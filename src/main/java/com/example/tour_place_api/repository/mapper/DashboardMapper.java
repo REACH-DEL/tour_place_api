@@ -13,12 +13,13 @@ import java.util.UUID;
 public interface DashboardMapper {
 
     // Statistics queries
-    @Select("SELECT COUNT(*) FROM users")
+    // Count only regular users (exclude admin role)
+    @Select("SELECT COUNT(*) FROM users WHERE role = 'user'")
     Long countTotalUsers();
 
     @Select("""
             SELECT COUNT(*) FROM users 
-            WHERE created_at < NOW() - INTERVAL '1 month'
+            WHERE role = 'user' AND created_at < NOW() - INTERVAL '1 month'
             """)
     Long countUsersPreviousMonth();
 

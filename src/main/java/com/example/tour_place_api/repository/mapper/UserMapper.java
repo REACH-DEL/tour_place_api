@@ -63,4 +63,20 @@ public interface UserMapper {
             SELECT EXISTS(SELECT 1 FROM users WHERE email = #{email})
             """)
     boolean existsByEmail(String email);
+
+    @ResultMap("userMapper")
+    @Select("""
+            UPDATE users SET status = #{status}, updated_at = NOW()
+            WHERE user_id = #{userId}::UUID
+            RETURNING *
+            """)
+    Optional<User> updateStatus(@Param("userId") UUID userId, @Param("status") Boolean status);
+
+    @ResultMap("userMapper")
+    @Select("""
+            UPDATE users SET role = #{role}::user_role, updated_at = NOW()
+            WHERE user_id = #{userId}::UUID
+            RETURNING *
+            """)
+    Optional<User> updateRole(@Param("userId") UUID userId, @Param("role") String role);
 }

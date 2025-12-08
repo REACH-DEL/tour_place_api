@@ -120,6 +120,9 @@ public class DashboardService {
             case "IMAGE_UPLOADED" -> "Image uploaded";
             case "IMAGE_DELETED" -> "Image deleted";
             case "USER_REGISTERED" -> "New user registered";
+            case "USER_ENABLED" -> "User enabled";
+            case "USER_DISABLED" -> "User disabled";
+            case "USER_ROLE_UPDATED" -> "User role updated";
             default -> action;
         };
     }

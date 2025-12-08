@@ -64,7 +64,7 @@ CREATE INDEX idx_search_history_user ON search_history(user_id);
 CREATE INDEX idx_search_history_place ON search_history(place_id);
 CREATE INDEX idx_search_history_user_updated ON search_history(user_id, updated_at DESC);
 
-CREATE TYPE activity_action AS ENUM ('PLACE_CREATED', 'PLACE_UPDATED', 'PLACE_DELETED', 'IMAGE_UPLOADED', 'IMAGE_DELETED', 'USER_REGISTERED');
+CREATE TYPE activity_action AS ENUM ('PLACE_CREATED', 'PLACE_UPDATED', 'PLACE_DELETED', 'IMAGE_UPLOADED', 'IMAGE_DELETED', 'USER_REGISTERED', 'USER_ENABLED', 'USER_DISABLED', 'USER_ROLE_UPDATED');
 CREATE TYPE entity_type AS ENUM ('PLACE', 'USER', 'IMAGE');
 
 CREATE TABLE activity_log (
