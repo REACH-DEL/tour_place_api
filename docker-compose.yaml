@@ -2,12 +2,12 @@ version: "3.9"
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:16
     container_name: postgres
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: Reach
+      POSTGRES_USER: reach@postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
