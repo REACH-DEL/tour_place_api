@@ -5,6 +5,7 @@ import com.example.tour_place_api.model.response.ApiResponse;
 import com.example.tour_place_api.model.response.FileResponse;
 import com.example.tour_place_api.security.JwtAuthenticationDetails;
 import com.example.tour_place_api.service.MinioService;
+import com.example.tour_place_api.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Collection;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/file")
@@ -29,6 +31,9 @@ import java.util.Collection;
 public class FileController {
     @Autowired
     private MinioService minioService;
+
+    @Autowired
+    private DashboardService dashboardService;
 
     @Operation(summary = "Upload file", description = "Upload a file to MinIO storage. MAIN_IMAGE and DETAIL_IMAGE require ROLE_ADMIN. PROFILE_IMAGE can be uploaded by users for their own profile.", 
                security = @SecurityRequirement(name = "bearerAuth"))
@@ -84,6 +89,12 @@ public class FileController {
                     .fileType(file.getContentType())
                     .fileSize(file.getSize())
                     .build();
+
+            // Log activity for MAIN_IMAGE and DETAIL_IMAGE (admin only)
+            if (fileType == FileType.MAIN_IMAGE || fileType == FileType.DETAIL_IMAGE) {
+                UUID userIdUUID = UUID.fromString(userId);
+                dashboardService.logActivity("IMAGE_UPLOADED", "IMAGE", null, fileName, userIdUUID);
+            }
 
             ApiResponse<FileResponse> response = ApiResponse.<FileResponse>builder()
                     .success(true)
@@ -194,6 +205,12 @@ public class FileController {
             }
 
             minioService.deleteFile(fileName);
+            
+            // Log activity for MAIN_IMAGE and DETAIL_IMAGE (admin only)
+            if (fileName.startsWith("main_image/") || fileName.startsWith("detail_image/")) {
+                UUID userIdUUID = UUID.fromString(userId);
+                dashboardService.logActivity("IMAGE_DELETED", "IMAGE", null, fileName, userIdUUID);
+            }
             
             ApiResponse<Void> response = ApiResponse.<Void>builder()
                     .success(true)

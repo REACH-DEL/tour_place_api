@@ -64,4 +64,21 @@ CREATE INDEX idx_search_history_user ON search_history(user_id);
 CREATE INDEX idx_search_history_place ON search_history(place_id);
 CREATE INDEX idx_search_history_user_updated ON search_history(user_id, updated_at DESC);
 
-INSERT INTO user VALUE(full_name='TheGoat', email='tirachlo34@gmail.com', password='$2a$10$Ntt5rQer0eCuZuOVEiCYVOpalvc.pKyrblpVGz30nvfB9q6o8GbWS', role='admin', status=true);
+CREATE TYPE activity_action AS ENUM ('PLACE_CREATED', 'PLACE_UPDATED', 'PLACE_DELETED', 'IMAGE_UPLOADED', 'IMAGE_DELETED', 'USER_REGISTERED');
+CREATE TYPE entity_type AS ENUM ('PLACE', 'USER', 'IMAGE');
+
+CREATE TABLE activity_log (
+    activity_id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    action           activity_action NOT NULL,
+    entity_type      entity_type NOT NULL,
+    entity_id        UUID,
+    entity_name      VARCHAR(255),
+    user_id          UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    created_at       TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_activity_log_created_at ON activity_log(created_at DESC);
+CREATE INDEX idx_activity_log_user ON activity_log(user_id);
+CREATE INDEX idx_activity_log_entity ON activity_log(entity_type, entity_id);
+
+INSERT INTO users (user_id, full_name, email, password, role, status) VALUES (gen_random_uuid(), 'TheGoat', 'tirachlo34@gmail.com', '$2a$10$Ntt5rQer0eCuZuOVEiCYVOpalvc.pKyrblpVGz30nvfB9q6o8GbWS', 'admin', true);

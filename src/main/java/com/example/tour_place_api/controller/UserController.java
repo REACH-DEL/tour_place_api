@@ -7,6 +7,7 @@ import com.example.tour_place_api.model.response.ApiResponse;
 import com.example.tour_place_api.model.response.LoginResponse;
 import com.example.tour_place_api.model.response.UserResponse;
 import com.example.tour_place_api.service.AuthService;
+import com.example.tour_place_api.service.DashboardService;
 import com.example.tour_place_api.security.JwtAuthenticationDetails;
 import com.example.tour_place_api.security.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,9 @@ public class UserController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private DashboardService dashboardService;
 
     @Operation(summary = "Register user", description = "Register a new user and send OTP to email", security = {})
     @PostMapping("/register")
@@ -67,6 +71,9 @@ public class UserController {
             // Get user info from token
             UUID userId = jwtTokenProvider.getUserIdFromToken(token);
             UserResponse user = authService.getUserById(userId);
+
+            // Log activity
+            dashboardService.logActivity("USER_REGISTERED", "USER", userId, user.getEmail(), userId);
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .accessToken(token)

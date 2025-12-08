@@ -8,6 +8,7 @@ import com.example.tour_place_api.model.response.PlaceResponse;
 import com.example.tour_place_api.model.response.PlaceSummaryResponse;
 import com.example.tour_place_api.security.JwtAuthenticationDetails;
 import com.example.tour_place_api.service.PlaceService;
+import com.example.tour_place_api.service.DashboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -30,13 +31,25 @@ public class PlaceController {
     @Autowired
     private PlaceService placeService;
 
+    @Autowired
+    private DashboardService dashboardService;
+
     @Operation(summary = "Create place", description = "Create a new place. Optionally include mainImageUrl (get URL from /api/v1/files/upload endpoint). (Requires ROLE_ADMIN)", 
                security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping(consumes = "application/json")
     public ResponseEntity<ApiResponse<PlaceResponse>> createPlace(
-            @Valid @RequestBody CreatePlaceRequest request) {
+            @Valid @RequestBody CreatePlaceRequest request,
+            Authentication authentication) {
         try {
             PlaceResponse place = placeService.createPlace(request, null);
+            
+            // Log activity
+            if (authentication != null && authentication.getDetails() instanceof JwtAuthenticationDetails) {
+                JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+                UUID userId = UUID.fromString(details.getUserId());
+                dashboardService.logActivity("PLACE_CREATED", "PLACE", place.getPlaceId(), place.getPlaceName(), userId);
+            }
+            
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.<PlaceResponse>builder()
                             .success(true)
@@ -204,9 +217,18 @@ public class PlaceController {
     @PutMapping(value = "/{id}", consumes = "application/json")
     public ResponseEntity<ApiResponse<PlaceResponse>> updatePlace(
             @PathVariable UUID id,
-            @Valid @RequestBody UpdatePlaceRequest request) {
+            @Valid @RequestBody UpdatePlaceRequest request,
+            Authentication authentication) {
         try {
             PlaceResponse place = placeService.updatePlace(id, request);
+            
+            // Log activity
+            if (authentication != null && authentication.getDetails() instanceof JwtAuthenticationDetails) {
+                JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+                UUID userId = UUID.fromString(details.getUserId());
+                dashboardService.logActivity("PLACE_UPDATED", "PLACE", place.getPlaceId(), place.getPlaceName(), userId);
+            }
+            
             return ResponseEntity.ok(
                     ApiResponse.<PlaceResponse>builder()
                             .success(true)
@@ -227,9 +249,28 @@ public class PlaceController {
     @Operation(summary = "Delete place", description = "Delete a place (Requires ROLE_ADMIN)", 
                security = @SecurityRequirement(name = "bearerAuth"))
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deletePlace(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deletePlace(
+            @PathVariable UUID id,
+            Authentication authentication) {
         try {
+            // Get place name before deletion for activity log
+            String placeName = "Unknown";
+            try {
+                PlaceResponse place = placeService.getPlaceById(id, null);
+                placeName = place.getPlaceName();
+            } catch (Exception e) {
+                // Place not found, use default name
+            }
+            
             placeService.deletePlace(id);
+            
+            // Log activity
+            if (authentication != null && authentication.getDetails() instanceof JwtAuthenticationDetails) {
+                JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+                UUID userId = UUID.fromString(details.getUserId());
+                dashboardService.logActivity("PLACE_DELETED", "PLACE", id, placeName, userId);
+            }
+            
             return ResponseEntity.ok(
                     ApiResponse.<Void>builder()
                             .success(true)
@@ -251,9 +292,25 @@ public class PlaceController {
     @PostMapping(value = "/{id}/images", consumes = "application/json")
     public ResponseEntity<ApiResponse<Void>> addAdditionalImages(
             @PathVariable UUID id,
-            @Valid @RequestBody AddImagesRequest request) {
+            @Valid @RequestBody AddImagesRequest request,
+            Authentication authentication) {
         try {
             placeService.addAdditionalImages(id, request.getImageUrls());
+            
+            // Log activity for each image uploaded
+            if (authentication != null && authentication.getDetails() instanceof JwtAuthenticationDetails) {
+                JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+                UUID userId = UUID.fromString(details.getUserId());
+                try {
+                    PlaceResponse place = placeService.getPlaceById(id, null);
+                    // Log activity once for the batch of images
+                    dashboardService.logActivity("IMAGE_UPLOADED", "IMAGE", id, place.getPlaceName(), userId);
+                } catch (Exception e) {
+                    // Log without place name if place not found
+                    dashboardService.logActivity("IMAGE_UPLOADED", "IMAGE", id, "Unknown", userId);
+                }
+            }
+            
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.<Void>builder()
                             .success(true)

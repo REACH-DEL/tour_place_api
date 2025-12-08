@@ -57,6 +57,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/search-history/**").authenticated()
                 // Require authentication for profile endpoint
                 .requestMatchers(HttpMethod.GET, "/api/v1/auth/profile").authenticated()
+                // Require ROLE_ADMIN for dashboard endpoints
+                .requestMatchers("/api/v1/dashboard/**").hasRole("ADMIN")
                 // All other /api/v1/** endpoints require authentication
                 .requestMatchers("/api/v1/**").authenticated()
                 // Allow all other requests (like error pages, etc.)
