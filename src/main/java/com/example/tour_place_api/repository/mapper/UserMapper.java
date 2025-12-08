@@ -47,6 +47,12 @@ public interface UserMapper {
 
     @ResultMap("userMapper")
     @Select("""
+            SELECT * FROM users WHERE role = 'user'
+            """)
+    List<User> findAllRegularUsers();
+
+    @ResultMap("userMapper")
+    @Select("""
             UPDATE users SET full_name = #{user.fullName}, email = #{user.email}, password = #{user.password},
                             status = #{user.status}, role = #{user.role}::user_role, updated_at = NOW()
             WHERE user_id = #{user.userId}::UUID

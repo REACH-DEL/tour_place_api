@@ -25,7 +25,8 @@ public class UserManagementService {
     private DashboardService dashboardService;
 
     public List<UserResponse> getAllUsers() {
-        List<User> users = userMapper.findAll();
+        // Get only regular users (exclude admin role)
+        List<User> users = userMapper.findAllRegularUsers();
         return users.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
