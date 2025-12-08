@@ -6,9 +6,9 @@ services:
     container_name: postgres
     restart: always
     environment:
-      POSTGRES_DB: Reach
-      POSTGRES_USER: reach@postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: tourguide
+      POSTGRES_USER: Reach
+      POSTGRES_PASSWORD: reach@postgres
     ports:
       - "5432:5432"
     volumes:
@@ -30,7 +30,7 @@ services:
 
   springboot:
     build:
-      context: ./springboot
+      context: ./
     container_name: springboot
     restart: always
     ports:
