@@ -115,6 +115,76 @@ public class AuthService {
         return mapToResponse(userOptional.get());
     }
 
+    public UserResponse updateProfileImage(UUID userId, String profileImageUrl) {
+        Optional<User> userOptional = userMapper.findById(userId);
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        Optional<User> updatedUserOptional = userMapper.updateProfileImage(userId, profileImageUrl);
+        if (updatedUserOptional.isEmpty()) {
+            throw new RuntimeException("Failed to update profile image");
+        }
+
+        return mapToResponse(updatedUserOptional.get());
+    }
+
+    public void changePassword(UUID userId, String oldPassword, String newPassword) {
+        Optional<User> userOptional = userMapper.findById(userId);
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = userOptional.get();
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new RuntimeException("Old password is incorrect");
+        }
+
+        String encodedNewPassword = passwordEncoder.encode(newPassword);
+        Optional<User> updatedUserOptional = userMapper.updatePassword(userId, encodedNewPassword);
+        if (updatedUserOptional.isEmpty()) {
+            throw new RuntimeException("Failed to update password");
+        }
+    }
+
+    public void forgotPassword(String email) {
+        Optional<User> userOptional = userMapper.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("User not found with this email");
+        }
+
+        User user = userOptional.get();
+        if (!user.getStatus()) {
+            throw new RuntimeException("User account is disabled");
+        }
+
+        String otp = otpService.generateOtp(email);
+        emailService.sendPasswordResetOtpEmail(email, otp);
+    }
+
+    public void resetPassword(String email, String otp, String newPassword) {
+        Optional<User> userOptional = userMapper.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("User not found with this email");
+        }
+
+        User user = userOptional.get();
+        if (!user.getStatus()) {
+            throw new RuntimeException("User account is disabled");
+        }
+
+        if (!otpService.verifyOtp(email, otp)) {
+            throw new RuntimeException("Invalid or expired OTP");
+        }
+
+        String encodedNewPassword = passwordEncoder.encode(newPassword);
+        Optional<User> updatedUserOptional = userMapper.updatePassword(user.getUserId(), encodedNewPassword);
+        if (updatedUserOptional.isEmpty()) {
+            throw new RuntimeException("Failed to reset password");
+        }
+    }
+
     private UserResponse mapToResponse(User user) {
         return UserResponse.builder()
                 .userId(user.getUserId())
@@ -122,6 +192,7 @@ public class AuthService {
                 .email(user.getEmail())
                 .status(user.getStatus())
                 .role(user.getRole())
+                .profileImage(user.getProfileImage())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

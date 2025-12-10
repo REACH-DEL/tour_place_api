@@ -9,6 +9,7 @@ CREATE TABLE users (
     password       TEXT NOT NULL,
     status         BOOLEAN DEFAULT TRUE,
     role           user_role DEFAULT 'user',
+    profile_image  TEXT,
     created_at     TIMESTAMP DEFAULT NOW(),
     updated_at     TIMESTAMP DEFAULT NOW()
 );
@@ -80,5 +81,21 @@ CREATE TABLE activity_log (
 CREATE INDEX idx_activity_log_created_at ON activity_log(created_at DESC);
 CREATE INDEX idx_activity_log_user ON activity_log(user_id);
 CREATE INDEX idx_activity_log_entity ON activity_log(entity_type, entity_id);
+
+CREATE TABLE review (
+    review_id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    place_id        UUID NOT NULL REFERENCES place(place_id) ON DELETE CASCADE,
+    rating          INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment         TEXT,
+    created_at      TIMESTAMP DEFAULT NOW(),
+    updated_at      TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, place_id)
+);
+
+CREATE INDEX idx_review_user ON review(user_id);
+CREATE INDEX idx_review_place ON review(place_id);
+CREATE INDEX idx_review_place_created ON review(place_id, created_at DESC);
+CREATE INDEX idx_review_rating ON review(place_id, rating);
 
 INSERT INTO users (user_id, full_name, email, password, role, status) VALUES (gen_random_uuid(), 'TheGoat', 'tirachlo34@gmail.com', '$2a$10$Ntt5rQer0eCuZuOVEiCYVOpalvc.pKyrblpVGz30nvfB9q6o8GbWS', 'admin', true);

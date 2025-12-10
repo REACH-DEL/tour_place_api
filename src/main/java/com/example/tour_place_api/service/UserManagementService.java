@@ -103,6 +103,7 @@ public class UserManagementService {
                 .email(user.getEmail())
                 .status(user.getStatus())
                 .role(user.getRole())
+                .profileImage(user.getProfileImage())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();

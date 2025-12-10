@@ -13,8 +13,8 @@ import java.util.UUID;
 public interface UserMapper {
     
     @Insert("""
-            INSERT INTO users (user_id, full_name, email, password, status, role, created_at, updated_at)
-            VALUES (#{userId}::UUID, #{fullName}, #{email}, #{password}, #{status}, #{role}::user_role, NOW(), NOW())
+            INSERT INTO users (user_id, full_name, email, password, status, role, profile_image, created_at, updated_at)
+            VALUES (#{userId}::UUID, #{fullName}, #{email}, #{password}, #{status}, #{role}::user_role, #{profileImage}, NOW(), NOW())
             """)
     void insert(User user);
 
@@ -25,6 +25,7 @@ public interface UserMapper {
             @Result(property = "password", column = "password"),
             @Result(property = "status", column = "status"),
             @Result(property = "role", column = "role"),
+            @Result(property = "profileImage", column = "profile_image"),
             @Result(property = "createdAt", column = "created_at"),
             @Result(property = "updatedAt", column = "updated_at")
     })
@@ -85,4 +86,20 @@ public interface UserMapper {
             RETURNING *
             """)
     Optional<User> updateRole(@Param("userId") UUID userId, @Param("role") String role);
+
+    @ResultMap("userMapper")
+    @Select("""
+            UPDATE users SET profile_image = #{profileImageUrl}, updated_at = NOW()
+            WHERE user_id = #{userId}::UUID
+            RETURNING *
+            """)
+    Optional<User> updateProfileImage(@Param("userId") UUID userId, @Param("profileImageUrl") String profileImageUrl);
+
+    @ResultMap("userMapper")
+    @Select("""
+            UPDATE users SET password = #{password}, updated_at = NOW()
+            WHERE user_id = #{userId}::UUID
+            RETURNING *
+            """)
+    Optional<User> updatePassword(@Param("userId") UUID userId, @Param("password") String password);
 }

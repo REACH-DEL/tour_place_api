@@ -17,6 +17,7 @@ public class UserResponse {
     private String email;
     private Boolean status;
     private String role;
+    private String profileImage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

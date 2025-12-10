@@ -53,4 +53,24 @@ public class EmailService {
             throw new RuntimeException("Failed to send email: " + e.getMessage());
         }
     }
+
+    public void sendPasswordResetOtpEmail(String email, String otp) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Tour Place API - Password Reset OTP");
+        message.setText("Your OTP for password reset is: " + otp + "\n\nThis OTP is valid for 2 minutes.\n\nIf you did not request this, please ignore this email.");
+        
+        // Use configured email or default
+        if (fromEmail != null && !fromEmail.isEmpty() && !fromEmail.equals("your-email@gmail.com")) {
+            message.setFrom(fromEmail);
+        } else {
+            message.setFrom("noreply@tourplace.com");
+        }
+
+        try {
+            mailSender.send(message);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
+        }
+    }
 }

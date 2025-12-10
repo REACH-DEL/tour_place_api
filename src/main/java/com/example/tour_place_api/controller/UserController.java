@@ -1,13 +1,13 @@
 package com.example.tour_place_api.controller;
 
-import com.example.tour_place_api.model.request.RegisterRequest;
-import com.example.tour_place_api.model.request.VerifyOtpRequest;
-import com.example.tour_place_api.model.request.LoginRequest;
+import com.example.tour_place_api.model.request.*;
 import com.example.tour_place_api.model.response.ApiResponse;
 import com.example.tour_place_api.model.response.LoginResponse;
+import com.example.tour_place_api.model.response.OtpStatusResponse;
 import com.example.tour_place_api.model.response.UserResponse;
 import com.example.tour_place_api.service.AuthService;
 import com.example.tour_place_api.service.DashboardService;
+import com.example.tour_place_api.service.OtpService;
 import com.example.tour_place_api.security.JwtAuthenticationDetails;
 import com.example.tour_place_api.security.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +36,9 @@ public class UserController {
 
     @Autowired
     private DashboardService dashboardService;
+
+    @Autowired
+    private OtpService otpService;
 
     @Operation(summary = "Register user", description = "Register a new user and send OTP to email", security = {})
     @PostMapping("/register")
@@ -197,6 +200,138 @@ public class UserController {
                     .body(ApiResponse.<Void>builder()
                             .success(false)
                             .message("Error during logout: " + e.getMessage())
+                            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .build());
+        }
+    }
+
+    @Operation(summary = "Update profile image", description = "Update the profile image URL for the current authenticated user", 
+               security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("/profile/image")
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfileImage(
+            @Valid @RequestBody UpdateProfileImageRequest request,
+            Authentication authentication) {
+        try {
+            JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+            UUID userId = UUID.fromString(details.getUserId());
+
+            UserResponse user = authService.updateProfileImage(userId, request.getProfileImageUrl());
+            return ResponseEntity.ok(
+                    ApiResponse.<UserResponse>builder()
+                            .success(true)
+                            .message("Profile image updated successfully")
+                            .payload(user)
+                            .status(HttpStatus.OK)
+                            .build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.<UserResponse>builder()
+                            .success(false)
+                            .message(e.getMessage())
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+    }
+
+    @Operation(summary = "Change password", description = "Change password for the current authenticated user using old password confirmation", 
+               security = @SecurityRequirement(name = "bearerAuth"))
+    @PutMapping("/profile/password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+        try {
+            JwtAuthenticationDetails details = (JwtAuthenticationDetails) authentication.getDetails();
+            UUID userId = UUID.fromString(details.getUserId());
+
+            authService.changePassword(userId, request.getOldPassword(), request.getNewPassword());
+            return ResponseEntity.ok(
+                    ApiResponse.<Void>builder()
+                            .success(true)
+                            .message("Password changed successfully")
+                            .status(HttpStatus.OK)
+                            .build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.<Void>builder()
+                            .success(false)
+                            .message(e.getMessage())
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+    }
+
+    @Operation(summary = "Forgot password", description = "Request password reset OTP to be sent to email", security = {})
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            authService.forgotPassword(request.getEmail());
+            return ResponseEntity.ok(
+                    ApiResponse.<Void>builder()
+                            .success(true)
+                            .message("Password reset OTP sent to email. Please check your inbox.")
+                            .status(HttpStatus.OK)
+                            .build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.<Void>builder()
+                            .success(false)
+                            .message(e.getMessage())
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+    }
+
+    @Operation(summary = "Reset password", description = "Reset password using OTP verification", security = {})
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            authService.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
+            return ResponseEntity.ok(
+                    ApiResponse.<Void>builder()
+                            .success(true)
+                            .message("Password reset successfully. Please login with your new password.")
+                            .status(HttpStatus.OK)
+                            .build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.<Void>builder()
+                            .success(false)
+                            .message(e.getMessage())
+                            .status(HttpStatus.BAD_REQUEST)
+                            .build());
+        }
+    }
+
+    @Operation(summary = "Get OTP status", description = "Get OTP countdown status for password reset", security = {})
+    @PostMapping("/otp-status")
+    public ResponseEntity<ApiResponse<OtpStatusResponse>> getOtpStatus(
+            @Valid @RequestBody OtpStatusRequest request) {
+        try {
+            long remainingSeconds = otpService.getRemainingSeconds(request.getEmail());
+            boolean hasOtp = remainingSeconds > 0;
+
+            OtpStatusResponse response = OtpStatusResponse.builder()
+                    .hasOtp(hasOtp)
+                    .remainingSeconds(remainingSeconds)
+                    .message(hasOtp 
+                            ? "OTP is valid. " + remainingSeconds + " seconds remaining."
+                            : "No active OTP found or OTP has expired.")
+                    .build();
+
+            return ResponseEntity.ok(
+                    ApiResponse.<OtpStatusResponse>builder()
+                            .success(true)
+                            .message("OTP status retrieved successfully")
+                            .payload(response)
+                            .status(HttpStatus.OK)
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<OtpStatusResponse>builder()
+                            .success(false)
+                            .message("Error retrieving OTP status: " + e.getMessage())
                             .status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .build());
         }

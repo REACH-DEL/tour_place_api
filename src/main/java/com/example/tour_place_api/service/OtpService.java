@@ -58,6 +58,21 @@ public class OtpService {
         otpStorage.remove(email);
     }
 
+    public long getRemainingSeconds(String email) {
+        OtpData otpData = otpStorage.get(email);
+        if (otpData == null) {
+            return 0;
+        }
+        
+        long currentTime = System.currentTimeMillis();
+        if (currentTime > otpData.expirationTime) {
+            otpStorage.remove(email);
+            return 0;
+        }
+        
+        return TimeUnit.MILLISECONDS.toSeconds(otpData.expirationTime - currentTime);
+    }
+
     private String generateRandomOtp() {
         Random random = new Random();
         StringBuilder otp = new StringBuilder();

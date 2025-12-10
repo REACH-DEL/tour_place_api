@@ -67,7 +67,8 @@ public class PlaceController {
         }
     }
 
-    @Operation(summary = "Get all places", description = "Get all places. Filter by 'most_favorite' to get places ordered by favorite count, or 'all' (or omit) for all places. If authenticated, includes isFavorite field. (Public endpoint, optional authentication)", security = {})
+    @Operation(summary = "Get all places", description = "Get all places. Filter by 'most_favorite' to get places ordered by favorite count, or 'all' (or omit) for all places. If authenticated (Bearer token optional), includes isFavorite field. (Public endpoint, optional Bearer token)", 
+               security = {})
     @GetMapping
     public ResponseEntity<ApiResponse<List<PlaceResponse>>> getAllPlaces(
             @Parameter(description = "Filter: 'most_favorite' to order by favorite count, 'all' or omit for all places", required = false, example = "all")
@@ -99,7 +100,8 @@ public class PlaceController {
         }
     }
 
-    @Operation(summary = "Get place by ID", description = "Get a place by ID. If authenticated, includes isFavorite field. (Public endpoint, optional authentication)", security = {})
+    @Operation(summary = "Get place by ID", description = "Get a place by ID. If authenticated (Bearer token optional), includes isFavorite field. (Public endpoint, optional Bearer token)", 
+               security = {})
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PlaceResponse>> getPlaceById(
             @PathVariable UUID id,
@@ -130,11 +132,13 @@ public class PlaceController {
         }
     }
 
-    @Operation(summary = "Search places", description = "Search places by name. Returns lightweight results with only placeId and placeName (like YouTube search). (Public endpoint)", security = {})
+    @Operation(summary = "Search places", description = "Search places by name. Returns lightweight results with only placeId and placeName (like YouTube search). (Public endpoint, optional Bearer token)", 
+               security = {})
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<PlaceSummaryResponse>>> searchPlaces(
             @Parameter(description = "Search query to find places by name", required = true, example = "Khmer")
-            @RequestParam("query") String query) {
+            @RequestParam("query") String query,
+            Authentication authentication) {
         try {
             List<PlaceSummaryResponse> places = placeService.searchPlacesSummary(query);
             return ResponseEntity.ok(
@@ -154,7 +158,8 @@ public class PlaceController {
         }
     }
 
-    @Operation(summary = "Get nearby places", description = "Get places near a specific location using latitude and longitude. Returns places ordered by distance (in kilometers). If authenticated, includes isFavorite field. (Public endpoint, optional authentication)", security = {})
+    @Operation(summary = "Get nearby places", description = "Get places near a specific location using latitude and longitude. Returns places ordered by distance (in kilometers). If authenticated (Bearer token optional), includes isFavorite field. (Public endpoint, optional Bearer token)", 
+               security = {})
     @GetMapping("/nearby")
     public ResponseEntity<ApiResponse<List<PlaceResponse>>> getNearbyPlaces(
             @Parameter(description = "Latitude of the location", required = true, example = "13.4125")

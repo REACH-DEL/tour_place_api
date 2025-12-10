@@ -1,4 +1,4 @@
-package com.example.tour_place_api.model.entity;
+package com.example.tour_place_api.model.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,14 +11,17 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class ReviewResponse {
+    private UUID reviewId;
     private UUID userId;
-    private String fullName;
-    private String email;
-    private String password;
-    private Boolean status;
-    private String role;
-    private String profileImage;
+    private String userName;
+    private String userEmail;
+    private String userProfileImage;
+    private UUID placeId;
+    private String placeName;
+    private Integer rating;
+    private String comment;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+
