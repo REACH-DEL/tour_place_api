@@ -38,7 +38,9 @@ public class SecurityConfig {
                 // Allow Swagger UI and OpenAPI endpoints (paths after context-path is stripped)
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/index.html").permitAll()
                 // Public auth endpoints
-                .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/verify-otp", "/api/v1/auth/resend-otp", "/api/v1/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/verify-otp", "/api/v1/auth/resend-otp", "/api/v1/auth/login", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password").permitAll()
+                // Public OTP status endpoint
+                .requestMatchers(HttpMethod.POST, "/api/v1/auth/otp-status").permitAll()
                 // Place GET endpoints - allow both authenticated and unauthenticated access
                 // Authentication is optional: if provided, users see their favorite status
                 .requestMatchers(HttpMethod.GET, "/api/v1/places/**").permitAll()
